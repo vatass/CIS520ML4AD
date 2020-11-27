@@ -68,7 +68,6 @@ def create_triples_from_set(dataset):
     return data
 
 class TrajectoryDataset(Dataset): 
-    """Face Landmarks dataset."""
 
 def __init__(self, pckl_file):
     """
