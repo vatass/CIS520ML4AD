@@ -19,10 +19,12 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import cross_val_score
+from auxfunctions import *
+
 
 def KNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset): 
   print('APPLY KNN ...')
@@ -41,7 +43,7 @@ def KNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   plt.plot(k_values, f1scores, color='g')
   plt.xlabel("K values")
   plt.ylabel("Validation F1 score")
-  plt.savefig('/content/drive/My Drive/CIS520_PROJECT/'+dataset +'_knn_kplot.png')
+  plt.savefig('../plots/'+dataset +'_knn_kplot.png')
   # plt.show()
 
   model = KNeighborsClassifier(n_neighbors=20)
@@ -49,7 +51,7 @@ def KNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
  
   predictions = model.predict(X_test)
   scores = model.predict_proba(X_test)
-  acc, prec, rec, sens, spec = evaluate(np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'knn') 
+  acc, prec, rec, sens, spec = evaluate(model, X_test, Y_test, np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'knn') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -59,12 +61,23 @@ def SVM(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   print('APPLY SVM ...')
 
   clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+  crossval_score = cross_validation_roc_auc(classifier=clf, X_train=X_train, Y_train=Y_train, algo='svm')
+
+  # scores in cross-validation 
+  scores = cross_val_score(clf, X_train, Y_train, cv=50)
+
+  # mean cross val score
+  print('Mean Cross-Val score', np.mean(scores))
+  data = {'cross': range(50), 'cv_scores' : scores} 
+  sns.lineplot(x='cross', y='cv_scores', data=data)
+  plt.savefig('../plots/cross_val_score_svm.png')
+
+
   clf.fit(X_train, Y_train)
   predictions = clf.predict(X_test)
   scores = clf.decision_function(X_test)
 
-
-  acc, prec, rec, sens, spec = evaluate(np.array(predictions), np.array(scores), np.array(Y_test), 'svm') 
+  acc, prec, rec, sens, spec = evaluate(clf, X_test, Y_test, np.array(predictions), np.array(scores), np.array(Y_test), 'svm') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -87,7 +100,7 @@ def Decision_Tree(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 
   predictions = grid_search_cv.predict(X_test)
   scores = grid_search_cv.predict_proba(X_test)
-  acc, prec, rec, sens,spec = evaluate(np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'decision_tree') 
+  acc, prec, rec, sens,spec = evaluate(grid_search_cv, X_test, Y_test, np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'decision_tree') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -98,6 +111,17 @@ def Logistic_Regression(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset)
 
   clf = make_pipeline(StandardScaler(),LogisticRegression(random_state=0))
 
+  logisticregression_score = cross_validation_roc_auc(classifier=clf, X_train=X_train, Y_train=Y_train, algo='logistic_regression')
+
+  # scores in cross-validation 
+  scores = cross_val_score(clf, X_train, Y_train, cv=50)
+
+  # mean cross val score
+  print('Mean Cross-Val score', np.mean(scores))
+  data = {'cross': range(50), 'cv_scores' : scores} 
+  sns.lineplot(x='cross', y='cv_scores', data=data)
+  plt.savefig('../plots/cross_val_score_logistic_regression.png')
+
   clf.fit(X_train, Y_train)
   valscore = clf.score(X_val, Y_val)
   # print(valscore) 
@@ -106,7 +130,7 @@ def Logistic_Regression(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset)
 
   predictions = clf.predict(X_test)
   scores = clf.predict_proba(X_test)
-  acc, prec, rec, sens, spec = evaluate(np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'logistic') 
+  acc, prec, rec, sens, spec = evaluate(clf, X_test,Y_test,np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'logistic') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -141,7 +165,7 @@ def AdaBoost(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   plt.plot(depths, train_accuracy, '-')
   plt.plot(depths, val_accuracy, '--')
   plt.title('The accuracy of different max_depth')
-  plt.savefig('/content/drive/My Drive/CIS520_PROJECT/'+dataset + '_accuracy_depth_adaboost.png')
+  plt.savefig('../plots/'+dataset + '_accuracy_depth_adaboost.png')
   # plt.show()
 
   best_model = models[np.argmax(val_accuracy)]
@@ -149,7 +173,7 @@ def AdaBoost(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 
   predictions = best_model.predict(X_test)
   scores = best_model.predict_proba(X_test)
-  acc, prec, rec, sens,spec = evaluate(np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'adaboost') 
+  acc, prec, rec, sens,spec = evaluate(best_model, X_test, Y_test, np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'adaboost') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -161,6 +185,18 @@ def MLP(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 
   clf = make_pipeline(StandardScaler(),MLPClassifier(random_state=1, max_iter=300))
 
+  mlp_score = cross_validation_roc_auc(classifier=clf, X_train=X_train, Y_train=Y_train, algo='MLP')
+
+  # scores in cross-validation 
+  scores = cross_val_score(clf, X_train, Y_train, cv=50)
+
+  # mean cross val score
+  print('Mean Cross-Val score', np.mean(scores))
+  data = {'cross': range(50), 'cv_scores' : scores} 
+  sns.lineplot(x='cross', y='cv_scores', data=data)
+  plt.savefig('../plots/cross_val_score_mlp.png')
+
+
   clf.fit(X_train, Y_train)
   predictions = clf.predict(X_test)
   scores = clf.predict_proba(X_test)
@@ -169,12 +205,12 @@ def MLP(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   mean_val_accuracy = clf.score(X_val, Y_val)
   mean_test_accuracy = clf.score(X_test, Y_test)
   
-  Y_test = list(Y_test)
+  Y_test = list(Y_test) 
 
   assert len(predictions) == len(scores)
   assert len(scores) == len(Y_test)
 
-  acc, prec, rec, sens, spec = evaluate(np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'mlp') 
+  acc, prec, rec, sens, spec = evaluate(clf, X_test, Y_test, np.array(predictions), np.array(scores[:,1]), np.array(Y_test), 'mlp') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
 
@@ -182,8 +218,6 @@ def MLP(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 
 
 print('RUN SUCCESSFULLY!')
-
-
 
 
 def apply_ML(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset): 
@@ -232,6 +266,7 @@ def apply_ML(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   scores_['algorithm'].append('SVM')
   
   ### Decision Tree ###
+
   acc, prec, rec, sens, spec = Decision_Tree(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset)
   metrics = [acc, prec, sens, spec]
 
@@ -263,8 +298,8 @@ def apply_ML(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   scores_['dataset'].append(dataset)
   scores_['algorithm'].append('Logistic Regression')
 
-
   ### AdaBoost ###
+  
   acc, prec, rec, sens, spec = AdaBoost(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset)
   metrics = [acc, prec, sens, spec]
 
@@ -279,7 +314,7 @@ def apply_ML(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   scores_['accuracy'].append(spec)
   scores_['dataset'].append(dataset)
   scores_['algorithm'].append('AdaBoost')
-
+  
   ### MLP ### 
   acc, prec, rec, sens, spec = MLP(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset)
   metrics = [acc, prec, sens, spec]
@@ -305,56 +340,26 @@ if __name__ == "__main__":
 
     # load npys
 
-# Split Train-Test 
-print('Dataset 1 \n')
-(X_train1, X_val1, Y_train1, Y_val1) = train_test_split(X1, Y1, test_size=0.05, random_state=42)
-(X_val1, X_test1, Y_val1, Y_test1) = train_test_split(X_val1, Y_val1, test_size=0.2, random_state=42)
+    X1 = np.load('../data/features_1.npy')
+    Y1 = np.load('../data/target_1.npy') 
 
-# show the sizes of each data split
-print("training data points: {}".format(len(Y_train1)))
-print("validation data points: {}".format(len(Y_val1)))
-print("testing data points: {}".format(len(Y_test1)))
-print() 
+    # Split Train-Test 
+    print('Dataset 1 \n')
+    (X_train1, X_val1, Y_train1, Y_val1) = train_test_split(X1, Y1, test_size=0.05, random_state=42)
+    (X_val1, X_test1, Y_val1, Y_test1) = train_test_split(X_val1, Y_val1, test_size=0.2, random_state=42)
 
-print('Dataset 2 \n')
-(X_train2_mean, X_val2_mean, Y_train2, Y_val2) = train_test_split(X2_mean_imputation, Y2, test_size=0.05, random_state=42)
-(X_val2_mean, X_test2_mean, Y_val2, Y_test2) = train_test_split(X_val2_mean, Y_val2, test_size=0.2, random_state=42)
+    # show the sizes of each data split
+    print("training data points: {}".format(len(Y_train1)))
+    print("validation data points: {}".format(len(Y_val1)))
+    print("testing data points: {}".format(len(Y_test1)))
+    print() 
 
-# show the sizes of each data split
+    
+    ### RUN ML ALGORITHMS FOR ALL SETS #### 
+    scores_1, scores1_ = apply_ML(X_train=X_train1, Y_train=Y_train1, X_val=X_val1, Y_val=Y_val1, X_test=X_test1, Y_test=Y_test1, dataset='dataset1')
 
-print("training data points: {}".format(len(Y_train2)))
-print("validation data points: {}".format(len(Y_val2)))
-print("testing data points: {}".format(len(Y_test2)))
-print()
+    with open('scores_dataset1.pickle', 'wb') as handle:
+        pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('sep_scores_dataset1.pickle', 'wb') as handle:
+        pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-print('Dataset 3 \n')
-(X_train2_regr, X_val2_regr, Y_train2, Y_val2) = train_test_split(X2_regress_imputed, Y2, test_size=0.05, random_state=42)
-(X_val2_regr, X_test2_regr, Y_val2, Y_test2) = train_test_split(X_val2_regr, Y_val2, test_size=0.2, random_state=42)
-
-# show the sizes of each data split
-
-print("training data points: {}".format(len(Y_train2)))
-print("validation data points: {}".format(len(Y_val2)))
-print("testing data points: {}".format(len(Y_test2)))
-
-
-### RUN ML ALGORITHMS FOR ALL SETS #### 
-scores_1, scores1_ = apply_ML(X_train=X_train1, Y_train=Y_train1, X_val=X_val1, Y_val=Y_val1, X_test=X_test1, Y_test=Y_test1, dataset='dataset1')
-scores_2, scores2_ = apply_ML(X_train=X_train2_mean, Y_train=Y_train2, X_val=X_val2_mean, Y_val=Y_val2, X_test=X_test2_mean, Y_test=Y_test2, dataset='dataset2')
-scores_3, scores3_ = apply_ML(X_train=X_train2_regr, Y_train=Y_train2, X_val=X_val2_regr, Y_val=Y_val2, X_test=X_test2_regr, Y_test=Y_test2, dataset='dataset3')
-
-
-with open('scores_dataset1.pickle', 'wb') as handle:
-    pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
-with open('sep_scores_dataset1.pickle', 'wb') as handle:
-    pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('scores_dataset2.pickle', 'wb') as handle:
-    pickle.dump(scores_2, handle, protocol=pickle.HIGHEST_PROTOCOL)
-with open('sep_scores_dataset2.pickle', 'wb') as handle:
-    pickle.dump(scores_2, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('scores_dataset3.pickle', 'wb') as handle:
-    pickle.dump(scores_3, handle, protocol=pickle.HIGHEST_PROTOCOL)
-with open('sep_scores_dataset2.pickle', 'wb') as handle:
-    pickle.dump(scores_3, handle, protocol=pickle.HIGHEST_PROTOCOL)

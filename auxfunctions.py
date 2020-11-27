@@ -8,6 +8,9 @@ import sys
 import seaborn 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import accuracy_score, plot_roc_curve, auc
+from sklearn.model_selection import StratifiedKFold
+
 # sns.set_theme(style="whitegrid")
 
 def select_baseline_data(df): 
@@ -148,7 +151,38 @@ def mean_imputation(df):
   return imputed_df 
   
 
-def evaluate(prediction, score, groundtruth, algo): 
+def plot_cv_indices(cv, X, y, group, ax, n_splits, lw=10):
+    """Create a sample plot for indices of a cross-validation object."""
+
+    # Generate the training/testing visualizations for each CV split
+    for ii, (tr, tt) in enumerate(cv.split(X=X, y=y, groups=group)):
+        # Fill in indices with the training/test groups
+        indices = np.array([np.nan] * len(X))
+        indices[tt] = 1
+        indices[tr] = 0
+
+        # Visualize the results
+        ax.scatter(range(len(indices)), [ii + .5] * len(indices),
+                   c=indices, marker='_', lw=lw, cmap=cmap_cv,
+                   vmin=-.2, vmax=1.2)
+
+    # Plot the data classes and groups at the end
+    ax.scatter(range(len(X)), [ii + 1.5] * len(X),
+               c=y, marker='_', lw=lw, cmap=cmap_data)
+
+    ax.scatter(range(len(X)), [ii + 2.5] * len(X),
+               c=group, marker='_', lw=lw, cmap=cmap_data)
+
+    # Formatting
+    yticklabels = list(range(n_splits)) + ['class', 'group']
+    ax.set(yticks=np.arange(n_splits+2) + .5, yticklabels=yticklabels,
+           xlabel='Sample index', ylabel="CV iteration",
+           ylim=[n_splits+2.2, -.2], xlim=[0, 100])
+    ax.set_title('{}'.format(type(cv).__name__), fontsize=15)
+    return ax
+
+
+def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo): 
 
   '''
   prediction : list with the predictions 
@@ -167,6 +201,12 @@ def evaluate(prediction, score, groundtruth, algo):
   specificity = class_report['0']['recall']
 
 
+  svc_disp = plot_roc_curve(classifier, X_test, Y_test)
+  plt.savefig('roc_curve_ontest'+algo +'.png')
+  plt.show()
+
+
+  '''
   # ROC_AUC plot 
   n_classes = 2 
   fpr = {}
@@ -192,9 +232,53 @@ def evaluate(prediction, score, groundtruth, algo):
   plt.ylabel('True Positive Rate')
   plt.title('Receiver operating characteristic example')
   plt.legend(loc="lower right")
-  plt.savefig('/content/drive/My Drive/CIS520_PROJECT/roc_curve_' + algo + '.png')  
+  plt.savefig('../plots/roc_curve_' + algo + '.png')  
   plt.show()
-
+  '''
 
   return accuracy, precision, recall, sensitivity, specificity
   
+def cross_validation_roc_auc(classifier,X_train, Y_train, algo): 
+
+  cv = StratifiedKFold(n_splits=6)
+
+  tprs = []
+  aucs = []
+  mean_fpr = np.linspace(0, 1, 100)
+
+  fig, ax = plt.subplots()
+  for i, (train, test) in enumerate(cv.split(X_train, Y_train)):
+      classifier.fit(X_train[train], Y_train[train])
+      viz = plot_roc_curve(classifier, X_train[test], Y_train[test],
+                          name='ROC fold {}'.format(i),
+                          alpha=0.3, lw=1, ax=ax)
+      interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+      interp_tpr[0] = 0.0
+      tprs.append(interp_tpr)
+      aucs.append(viz.roc_auc)
+
+  ax.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
+          label='Chance', alpha=.8)
+
+  mean_tpr = np.mean(tprs, axis=0)
+  mean_tpr[-1] = 1.0
+  mean_auc = auc(mean_fpr, mean_tpr)
+  std_auc = np.std(aucs)
+  ax.plot(mean_fpr, mean_tpr, color='b',
+          label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
+          lw=2, alpha=.8)
+
+  std_tpr = np.std(tprs, axis=0)
+  tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
+  tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
+  ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
+                  label=r'$\pm$ 1 std. dev.')
+
+  ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05],
+        title="Receiver operating characteristic example")
+  ax.legend(loc="lower right")
+  plt.savefig('../plots/roc_auc_cross_val_'+algo+'.png')
+  plt.show()
+
+
+

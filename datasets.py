@@ -4,16 +4,17 @@ import pandas as pd
 import sklearn 
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LinearRegression
 import pickle 
 import sys 
 import seaborn 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from auxfunctions import * 
 # sns.set_theme(style="whitegrid")
-
 from auxfunctions import select_baseline_data, missing_data
 
-with open('/content/drive/My Drive/CIS520_PROJECT/ADNI.pkl', 'rb') as f:
+with open('../ADNI.pkl', 'rb') as f:
     d = pickle.load(f)
 
 # cnt = 0
@@ -47,7 +48,7 @@ df = d[d['Diagnosis'] !='MCI']
 
 
 biomarkers = ['PTau_CSF','AV45_SUVR','FDG','Tau_CSF','Abeta_CSF', 'PIB_Status']
-print('Biomarkers in ADNI dataset Phase = ADNI1 and Diagnosis!=MCI :' )
+print('Biomarkers in ADNI dataset and Diagnosis!=MCI :' )
 print() 
 for bio in biomarkers: 
   # print(d[bio].head())
@@ -63,12 +64,15 @@ unique_diagnosis = list(df['Diagnosis'].unique())
 print('Unique Diagnosis', unique_diagnosis)
 print()
 
+
+longitudinal_dataset = set_up_longitudinal_data(dataframe=df)
+
 bdf = select_baseline_data(df=df)
 
 print('Baseline df shape', bdf.shape)
 
 
-bdf.to_pickle("/content/drive/My Drive/CIS520_PROJECT/BaselineADNI1.pkl")
+bdf.to_pickle("../data/BaselineADNI1.pkl")
 
 # Missing Values in Baseline 
 missing_data(df=bdf)
@@ -101,8 +105,8 @@ Y1=Y1.astype('int')
 
 
 ## Store Features and Target in .npy fils## 
-np.save('/content/drive/My Drive/CIS520_PROJECT/features_1.npy', X1)
-np.save('/content/drive/My Drive/CIS520_PROJECT/target_1.npy',Y1)
+np.save('../data/features_1.npy', X1)
+np.save('../data/target_1.npy',Y1)
 
 
 
@@ -147,8 +151,8 @@ Y2[Y2=='CN'] = 0
 Y2=Y2.astype('int')
 
 ## Store Features and Target in .npy fils## 
-np.save('/content/drive/My Drive/CIS520_PROJECT/mean_imputation_features_2.npy', X2_mean_imputation)
-np.save('/content/drive/My Drive/CIS520_PROJECT/target_2.npy',Y2)
+np.save('../data/mean_imputation_features_2.npy', X2_mean_imputation)
+np.save('../data/target_2.npy',Y2)
 
 ### Dataset 3 ####
 print('DATASET 3 : SET UP')
@@ -178,7 +182,6 @@ print('Features', X2_regress_imputed.shape)
 print('Target', Y2.shape)
 print()
 
-
 ## Store Features and Target in .npy fils## 
-np.save('/content/drive/My Drive/CIS520_PROJECT/regression_imputation_features_2.npy', X2_regress_imputed)
-np.save('/content/drive/My Drive/CIS520_PROJECT/target_2.npy',Y2)
+np.save('../data/regression_imputation_features_2.npy', X2_regress_imputed)
+np.save('../data/target_2.npy',Y2)
