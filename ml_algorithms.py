@@ -60,6 +60,36 @@ def KNN(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 def SVM(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   print('APPLY SVM ...')
 
+  ### Grid Search to some parameters ####
+  params_grid = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
+                     'C': [1, 10, 100, 1000]},
+                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+
+  svm_model = GridSearchCV(SVC(), params_grid, cv=5)
+  svm_model.fit(X_train_scaled, Y_train)
+
+  # View the accuracy score
+  print('Best score for training data:', svm_model.best_score_,"\n") 
+
+  # View the best parameters for the model found using grid search
+  print('Best C:',svm_model.best_estimator_.C,"\n") 
+  print('Best Kernel:',svm_model.best_estimator_.kernel,"\n")
+  print('Best Gamma:',svm_model.best_estimator_.gamma,"\n")
+
+  final_model = svm_model.best_estimator_
+
+  predictions = final_model.predict(X_test)
+  scores = final_model.decision_function(X_test)
+
+  acc, prec, rec, sens, spec = evaluate(final_model, X_test, Y_test, np.array(predictions), np.array(scores), np.array(Y_test), 'svm') 
+  print('Test Accuracy, Precision, Recall', acc, prec, rec)
+  print()
+
+  #####
+
+  '''
+  OLD CODE - See if new works and then delete 
+
   clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
   crossval_score = cross_validation_roc_auc(classifier=clf, X_train=X_train, Y_train=Y_train, algo='svm')
 
@@ -80,6 +110,8 @@ def SVM(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
   acc, prec, rec, sens, spec = evaluate(clf, X_test, Y_test, np.array(predictions), np.array(scores), np.array(Y_test), 'svm') 
   print('Test Accuracy, Precision, Recall', acc, prec, rec)
   print()
+
+  '''
 
   return acc, prec, rec, sens, spec
 
