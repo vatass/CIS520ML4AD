@@ -13,7 +13,7 @@ Team Members :
 This repository contains the code for the 1st part of our ML project "Alzheimer's Classification and Disease Trajectory Prediction" 
 Specifically, includes : 
 
-Statistical ML Algorithms for Classifying Alzheimer's using one-time acquisition data from [(ADNI)](http://adni.loni.usc.edu/) database. 
+Statistical ML + DL Algorithms for Classifying Alzheimer's using longitudinal data from [(ADNI)](http://adni.loni.usc.edu/) database. 
 
 
 
