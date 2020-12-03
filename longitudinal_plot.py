@@ -10,7 +10,7 @@ sns.set_theme(style="whitegrid")
 with open('../ADNI.pkl', 'rb') as f:
     d = pickle.load(f)
 
-unique_patients = d['participant_id'].unique() 
+    unique_patients = d['participant_id'].unique() 
 
 # grouped_df  = d.groupby('participant_id' ,as_index=False)
 # print('Number of groups', grouped_df.ngroups)

@@ -370,28 +370,28 @@ def apply_ML(X_train, Y_train, X_val, Y_val, X_test, Y_test, dataset):
 if __name__ == "__main__": 
 
 
-    # load npys
+  # load npys
 
-    X1 = np.load('../data/features_1.npy')
-    Y1 = np.load('../data/target_1.npy') 
+  X1 = np.load('../data/features_1.npy')
+  Y1 = np.load('../data/target_1.npy') 
 
-    # Split Train-Test 
-    print('Dataset 1 \n')
-    (X_train1, X_val1, Y_train1, Y_val1) = train_test_split(X1, Y1, test_size=0.05, random_state=42)
-    (X_val1, X_test1, Y_val1, Y_test1) = train_test_split(X_val1, Y_val1, test_size=0.2, random_state=42)
+  # Split Train-Test 
+  print('Dataset 1 \n')
+  (X_train1, X_val1, Y_train1, Y_val1) = train_test_split(X1, Y1, test_size=0.05, random_state=42)
+  (X_val1, X_test1, Y_val1, Y_test1) = train_test_split(X_val1, Y_val1, test_size=0.2, random_state=42)
 
-    # show the sizes of each data split
-    print("training data points: {}".format(len(Y_train1)))
-    print("validation data points: {}".format(len(Y_val1)))
-    print("testing data points: {}".format(len(Y_test1)))
-    print() 
+  # show the sizes of each data split
+  print("training data points: {}".format(len(Y_train1)))
+  print("validation data points: {}".format(len(Y_val1)))
+  print("testing data points: {}".format(len(Y_test1)))
+  print() 
 
-    
-    ### RUN ML ALGORITHMS FOR ALL SETS #### 
-    scores_1, scores1_ = apply_ML(X_train=X_train1, Y_train=Y_train1, X_val=X_val1, Y_val=Y_val1, X_test=X_test1, Y_test=Y_test1, dataset='dataset1')
 
-    with open('scores_dataset1.pickle', 'wb') as handle:
-        pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('sep_scores_dataset1.pickle', 'wb') as handle:
-        pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
+  ### RUN ML ALGORITHMS FOR ALL SETS #### 
+  scores_1, scores1_ = apply_ML(X_train=X_train1, Y_train=Y_train1, X_val=X_val1, Y_val=Y_val1, X_test=X_test1, Y_test=Y_test1, dataset='dataset1')
+
+  with open('scores_dataset1.pickle', 'wb') as handle:
+      pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
+  with open('sep_scores_dataset1.pickle', 'wb') as handle:
+      pickle.dump(scores_1, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

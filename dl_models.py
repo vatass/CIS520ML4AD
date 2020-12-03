@@ -11,8 +11,9 @@ import pickle
 import sys
 
 
-
 def set_up_classification_dataset(dataset): 
+
+    from sklearn import preprocessing
 
     l = dataset['dataset'] 
     data = [] 
@@ -25,9 +26,12 @@ def set_up_classification_dataset(dataset):
     
     for k,(f, t) in enumerate(l): 
 
-        print(f.shape)
+        # print(f.shape)
         ft = torch.from_numpy(f)
     
+        # normalize 
+        ft = preprocessing.scale(ft)
+
         if t == 'CN->CN': 
             
             target = [0,0,0]
@@ -65,6 +69,9 @@ def set_up_classification_dataset(dataset):
                 data.append((ft,target))
  
     test_data = test_cn + test_mci + test_dem 
+
+    
+
 
     return data, test_data
 
@@ -165,11 +172,6 @@ class LongitudinalDiseaseClassificationTestSet(Dataset):
 
 ########################## MODELS ####################################### 
 
-class KDELoss(nn.Module) : 
-
-    pass 
-
-
 class TemporalEncoder(pl.LightningModule):
 
     def __init__(self):
@@ -212,8 +214,8 @@ class ConvolutionalLongitudinalClassifier(pl.LightningModule):
     def __init__(self):
         super(ConvolutionalLongitudinalClassifier, self).__init__()
         self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(5,1)), 
-            nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(5,1))
+            nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1,5)), 
+            nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1,5))
         )
         
         self.classifier = nn.Sequential(nn.Linear(in_features=145, out_features=3)) 
@@ -234,8 +236,6 @@ class ConvolutionalLongitudinalClassifier(pl.LightningModule):
 
         data, target = batch
 
-        print(type(data))
-        print(type(target))
         target = target.float()
         
         hidden, out = self.forward(data)
@@ -324,11 +324,11 @@ def cli_main():
     # ------------
     # data
     # ------------
-    dataset = LongitudinalDiseaseClassification(pckl_file='longitudinal_dataset.pkl') 
+    dataset = LongitudinalDiseaseClassification(pckl_file='../longitudinal_dataset.pkl') 
 
     print('Train+Val Set', len(dataset))
 
-    test_dataset = LongitudinalDiseaseClassificationTestSet(pckl_file='longitudinal_dataset.pkl')
+    test_dataset = LongitudinalDiseaseClassificationTestSet(pckl_file='../longitudinal_dataset.pkl')
 
     print('Test Set', len(test_dataset))
     
