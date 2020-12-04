@@ -184,13 +184,13 @@ def train(batch_size, learning_rate, experiment_id,epochs):
 
                 with torch.no_grad(): 
 
-                    # hidden,output = model(feature)
-                    out = model(feature)
+                    # hidden,output = model(feature)  #used in LSTM Classif 
+                    out = model(feature)  # used in Conv Classif
+
 
                     loss = criterion(out, label)
 
                     val_loss.append(loss.item())                    
-
             
             mean_val_loss = np.mean(val_loss)
             print(f"{bcolors.OKGREEN} Mean Val Loss {mean_val_loss}{bcolors.ENDC}")
