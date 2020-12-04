@@ -10,10 +10,9 @@ sns.set_theme(style="whitegrid")
 with open('../ADNI.pkl', 'rb') as f:
     d = pickle.load(f)
 
-    unique_patients = d['participant_id'].unique() 
+unique_patients = d['participant_id'].unique() 
 
-# grouped_df  = d.groupby('participant_id' ,as_index=False)
-# print('Number of groups', grouped_df.ngroups)
+print('Unique Patients', len(list(unique_patients))) 
 
 longitudinal_dataset = [] 
 
@@ -29,7 +28,6 @@ abnormal_cases_in_detail = {'timepoint' : [], 'diagnosis' : [], 'patient' : [], 
 patient_to_remove = [] 
 
 cnt = 0
-
 abnormal = False
 
 for patient in unique_patients: 
@@ -104,8 +102,6 @@ for patient in unique_patients:
 
 
 
-
-
     if cleardiagnosis[0] == 'Dementia'  and  cleardiagnosis[-1] == 'MCI' :
         continue
         print('A B N O R M A L C A S E !! 222222222222')
@@ -171,9 +167,6 @@ for patient in unique_patients:
     print('Target', target)
     longitudinal_dataset.append((features, target))
 
-
-
-
 assert patients == len(unique_patients)
 assert len(longitudinal_dataset) < len(unique_patients)
 
@@ -185,8 +178,6 @@ print(len(longitudinal_dataset))
 print(type(datadict['dataset']))
 with open('longitudinal_dataset.pkl', 'wb') as handle:
     pickle.dump(datadict, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
 
 print('Total Patients', patients)
 print('Patients with progression', progression_patients)

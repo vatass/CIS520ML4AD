@@ -57,11 +57,11 @@ class ConvolutionalLongitudinalClassifier(nn.Module):
 
 
         temporal_maps = self.temporal_convolution(x)
-        print('Temporal Feature Maps', temporal_maps.shape)
+        # print('Temporal Feature Maps', temporal_maps.shape)
         vector = F.max_pool2d(temporal_maps, [temporal_maps.size(2), 1], padding=[0, 0])
-        print('Feature Vector', vector.shape)
+        # print('Feature Vector', vector.shape)
         embedding = self.linear(vector)
-        print('Output', embedding.shape)
+        # print('Output', embedding.shape)
 
         return embedding.squeeze(0).squeeze(0)
 
@@ -148,15 +148,15 @@ def train(batch_size, learning_rate, experiment_id,epochs):
 
             feature = feature.float() 
 
-            print('Input Shape', feature.shape)
-            print('Label', label)
+            # print('Input Shape', feature.shape)
+            # print('Label', label)
 
-            # hidden, output = model(feature)
-            out = model(feature)
+            # hidden, output = model(feature)  #used in LSTM Classif 
+            out = model(feature)  # used in Conv Classif
 
-            print('Output',out.shape)
+            # print('Output',out.shape)
 
-            loss = criterion(out,label)
+            loss = criterion(out,label) 
 
             train_loss.append(loss.item())
             loss.backward() 
@@ -196,7 +196,10 @@ def train(batch_size, learning_rate, experiment_id,epochs):
             print(f"{bcolors.OKGREEN} Mean Val Loss {mean_val_loss}{bcolors.ENDC}")
 
             # plot val loss 
+            plt.figure()
             sns.lineplot(x=range(len(val_loss)), y=val_loss)
+            plt.xlabel('iterations')
+            plt.ylabel('loss')
             plt.savefig(report_and_plot_path + 'val_loss_epoch_' + str(i) + '.png')
 
 

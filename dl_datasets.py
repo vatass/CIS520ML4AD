@@ -12,6 +12,7 @@ def set_up_classification_dataset(dataset):
     from sklearn import preprocessing
 
     l = dataset['dataset'] 
+
     data = [] 
 
     # CN : 0 
@@ -53,6 +54,7 @@ def set_up_classification_dataset(dataset):
                 data.append((ft,target))
             
         elif t == 'Dementia->Dementia': 
+            # print('Dementia Patient Found !')
             target = [0,0,0]
             target[2] = 1
             # target = torch.from_numpy(np.array(target))
@@ -65,9 +67,6 @@ def set_up_classification_dataset(dataset):
                 data.append((ft,target))
  
     test_data = test_cn + test_mci + test_dem 
-
-    
-
 
     return data, test_data
 
@@ -105,7 +104,7 @@ def create_triples_from_set(dataset):
         index_cn = np.random.randint(low=0, high=len(cn))
         index_mci = np.random.randint(low=0, high=len(mci))
         index_dem = np.random.randint(low=0, high=len(dem))
-        data.append((cn[index_cn], mci[index_mci,dem[index_dem]]))
+        data.append((cn[index_cn], mci[index_mci],dem[index_dem]))
 
     return data
 
@@ -165,3 +164,26 @@ class LongitudinalDiseaseClassificationTestSet(Dataset):
     def __getitem__(self, idx):
         input_, target = self.testdata[idx]
         return input_, target 
+
+
+
+if __name__ == "__main__" : 
+    pass 
+    longclassif = LongitudinalDiseaseClassification(pckl_file='../longitudinal_dataset.pkl') 
+
+    print('Len of Dataset', len(longclassif))
+
+    
+
+    for i, sample in enumerate(longclassif): 
+        print(i)
+        feature, label = sample 
+
+        print('Each feature corresponds to a patient')
+        print('feature', feature.shape)
+        if label == 2 :
+            print('Label', label)
+            sys.exit(0)
+        
+        # if i == 50 : 
+        #     sys.exit(0)
