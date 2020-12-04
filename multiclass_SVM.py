@@ -5,27 +5,63 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sklearn  
 import sys 
+from auxfunctions import select_baseline_data
 
 
+def define_dataset_multiclass_svm(): 
+    '''
+    Prepare the dataset accordingly for the first-level binary classification  
+    Annotate the CN as healthy and the Dementia/MCI as pathological 
+    CN = 0 
+    Dementia/MCI = 1 
+    '''
 
-
-def define_dataset():
-
-    with open('../ADNI.pkl', 'rb') as f:
+    with open('../ADNI.pkl', 'rb') as f: 
         d = pickle.load(f)
 
-    df = d[d['Diagnosis'] =='MCI' or d['Diagnosis'] == 'Dementia' or d['Diagnosis']=='CN']
+    print('Unique Patients', len(list(d['participant_id'].unique())))
+
+    df = d[(d['Diagnosis'] == 'MCI') | (d['Diagnosis'] == 'Dementia') | (d['Diagnosis'] == 'CN')]
+
+    print('Unique Patients', len(list(df['participant_id'].unique())))
 
     print(df['Diagnosis'].unique())
-
     assert len(df['Diagnosis'].unique()) == 3 
 
     bdf = select_baseline_data(df=df)
 
+    print(type(bdf), bdf.shape, len(bdf.index))
 
-    print('BASELINE MULTICALSS DATASET  : SET UP')
-    print() 
-    ### Convert Dataframe to Numpy Array 
+    ####### SELECT SOME SAMPLES FOR TEST OF THE WHOLE 2-LEVEL CLASSIFIER ########
+    # drop_indices = [] 
+    # for i in range(50): 
+    # print(bdf.index)
+    # sys.exit(0)
+    # drop_indices = np.random.choice(bdf.index,50)
+    # drop_indices.append(random_index)
+
+    drop_indices = [0,    8,   22,   29,   33,   41,   53,   59,   64,   68,  9233, 9237, 9241, 9245, 9249, 9250, 9251, 9252, 9253, 9254]
+
+    print('Before', bdf.shape)
+
+    initial_bdf = bdf.copy() 
+
+    for d in drop_indices: 
+
+        if d in bdf.index: 
+            print('to drop', d)
+            bdf = bdf.drop(index=d)
+
+    bdf_subset = bdf.copy() 
+    print('After', bdf_subset.shape)
+    
+    for d in initial_bdf.index : 
+        test_samples_df = initial_bdf.iloc[drop_indices]
+
+    print('Selected test samples', test_samples_df.shape)  
+
+    ##############################################################################
+
 
     Y1 = bdf['Diagnosis'].to_numpy() 
     X1 = bdf.filter(regex=("H_MUSE_Volume_*"))
@@ -34,65 +70,30 @@ def define_dataset():
     print('Target', Y1.shape)
     print() 
 
-    Y1[Y1=='Dementia'] = 1 
+    Y1[Y1=='Dementia' or Y1 =='MCI'] = 1 
     Y1[Y1=='CN'] = 0 
-    Y1[Y1=='MCI'] = 2 
+    # Y1[Y1=='MCI'] = 2 
     Y1=Y1.astype('int')
 
     ## Store Features and Target in .npy fils## 
-    np.save('../data/multiclass_features.npy', X1)
-    np.save('../data/multiclass_target.npy',Y1)
+    np.save('../data/first_level_features.npy', X1)
+    np.save('../data/first_level_target.npy',Y1)
 
+    Y2 = bdf['Diagnosis'].to_numpy() 
+    X2 = bdf.filter(regex=("H_MUSE_Volume_*"))
 
-    return X1, Y1 
+    print('Features', X1.shape)
+    print('Target', Y1.shape)
+    print() 
 
-    # l = d['dataset'] 
-    # data = [] 
+    Y2[Y2=='Dementia' or Y2 =='MCI'] = 1 
+ 
+    # Y1[Y1=='MCI'] = 2 
+    Y2=Y2.astype('int')
 
-    # # CN : 0 
-    # # MCI : 1 
-    # # Dementia : 2 
-
-    # data = {'diagnosis' : [], 'features' : []} 
-
-    # cn, mci, dem = [], [], [] 
-
-    # normal, disease = [], [] 
-
-    # for k,(f, t) in enumerate(l): 
-    #     print(f.shape)
-
-    #     if t == 'CN->CN': 
-    #         cn.append(f)
-    #         data['diagnosis'].append('CN')
-    #         data['features'].append(f)
-    #         normal.append((f,0)) 
-
-    #     elif t == 'MCI->MCI': 
-    #         mci.append(f)
-    #         data['diagnosis'].append('MCI')
-    #         data['features'].append(f)
-    #         disease.append
-
-    #     elif t == 'Dementia->Dementia': 
-    #         dem.append(f)
-    #         data['diagnosis'].append('Dementia')
-    #         data['features'].append(f)
-    
-
-    # print(len(cn), len(mci), len(dem))
-    # # visualize the 3-classes 
-    # plot_data = {'diagnosis' : [len(cn), len(mci), len(dem)], 'disease' : ['CN', 'MCI', 'Dementia'] }
-    # plot_data = pd.DataFrame(data=plot_data, index=['CN', 'MCI', 'Dementia'] , columns=['diagnosis', 'disease'])
-
-    # print(plot_data)
-    # plot_data.plot.pie(y='diagnosis', figsize=(5, 5), colormap='summer')
-    # plt.legend(loc='upper center')
-    # plt.savefig("../plots/longitudinal_multiclasses.png")
-    # plt.show() 
-
-    # return cn,mci, dem
-
+    ## Store Features and Target in .npy fils## 
+    np.save('../data/second_level_features.npy', X1)
+    np.save('../data/second_level_target.npy',Y1)
 
 def multiclass_SVM(): 
 
@@ -113,5 +114,8 @@ def multiclass_SVM():
 
 if __name__ == "__main__":
 
-    define_dataset() 
-    multiclass_SVM() 
+
+    define_dataset_multiclass_svm() 
+    
+    #define_dataset() 
+    #multiclass_SVM() 
