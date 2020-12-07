@@ -3,6 +3,7 @@ import pandas as pd
 import sklearn 
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LinearRegression
 import pickle 
 import sys 
 import seaborn 
@@ -68,11 +69,6 @@ def missing_data(df):
     missing_percentage.append(a)
     # print(ck,a)
   assert len(missing_percentage) == len(keys)
-
-
-def age_correction(X): 
-
-  pass
 
 
 def zero_imputation(df, feature): 
@@ -201,12 +197,12 @@ def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo):
   specificity = class_report['0']['recall']
 
 
-  svc_disp = plot_roc_curve(classifier, X_test, Y_test)
-  plt.savefig('roc_curve_ontest'+algo +'.png')
-  plt.show()
+  # svc_disp = plot_roc_curve(classifier, X_test, Y_test)
+  # plt.savefig('roc_curve_ontest'+algo +'.png')
+  # plt.show()
 
 
-  '''
+  
   # ROC_AUC plot 
   n_classes = 2 
   fpr = {}
@@ -233,8 +229,8 @@ def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo):
   plt.title('Receiver operating characteristic example')
   plt.legend(loc="lower right")
   plt.savefig('../plots/roc_curve_' + algo + '.png')  
-  plt.show()
-  '''
+  # plt.show()
+  
 
   return accuracy, precision, recall, sensitivity, specificity
   
@@ -278,7 +274,15 @@ def cross_validation_roc_auc(classifier,X_train, Y_train, algo):
         title="Receiver operating characteristic example")
   ax.legend(loc="lower right")
   plt.savefig('../plots/roc_auc_cross_val_'+algo+'.png')
-  plt.show()
+  # plt.show()
+
+def plot_uncertainty(groundtruth, uncertainty, path): 
+
+  print(groundtruth.shape, uncertainty.shape)
+  plt.figure() 
+  sns.boxplot(x=groundtruth, y=uncertainty)
+  plt.savefig(path + '.png')
+  # plt.show() 
 
 
 

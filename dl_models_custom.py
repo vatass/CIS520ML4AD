@@ -148,9 +148,9 @@ def train(batch_size, learning_rate, experiment_id,epochs):
 
             feature = feature.float() 
 
-            # print('Input Shape', feature.shape)
-            # print('Label', label)
-
+            print('Input Shape', feature.shape)
+            print('Label', label)
+            sys.exit(0)
             # hidden, output = model(feature)  #used in LSTM Classif 
             out = model(feature)  # used in Conv Classif
 
@@ -186,7 +186,6 @@ def train(batch_size, learning_rate, experiment_id,epochs):
 
                     # hidden,output = model(feature)  #used in LSTM Classif 
                     out = model(feature)  # used in Conv Classif
-
 
                     loss = criterion(out, label)
 

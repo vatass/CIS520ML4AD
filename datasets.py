@@ -64,9 +64,6 @@ unique_diagnosis = list(df['Diagnosis'].unique())
 print('Unique Diagnosis', unique_diagnosis)
 print()
 
-
-longitudinal_dataset = set_up_longitudinal_data(dataframe=df)
-
 bdf = select_baseline_data(df=df)
 
 print('Baseline df shape', bdf.shape)
