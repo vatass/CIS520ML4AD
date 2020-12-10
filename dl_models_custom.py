@@ -40,12 +40,12 @@ class ConvolutionalLongitudinalClassifier(nn.Module):
 
         self.classes = classes 
 
-        self.temporal_convolution = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1,10)), 
-        nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(10,1)), nn.BatchNorm2d(num_features=16), nn.ReLU() ,
-        nn.Conv2d(in_channels=16, out_channels=8, kernel_size=(10,1)), nn.BatchNorm2d(num_features=8), nn.ReLU(),
-        nn.Conv2d(in_channels=8, out_channels=1, kernel_size=(10,1)))
+        self.temporal_convolution = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1,5)), 
+        nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(1,5)), nn.BatchNorm2d(num_features=16), nn.ReLU() ,
+        nn.Conv2d(in_channels=16, out_channels=8, kernel_size=(1,5)), nn.BatchNorm2d(num_features=8), nn.ReLU(),
+        nn.Conv2d(in_channels=8, out_channels=1, kernel_size=(1,5)))
 
-        self.linear = nn.Sequential(nn.Linear(in_features=109, out_features=50), nn.Linear(in_features=50,out_features=25), nn.Linear(in_features=25,out_features=classes))
+        self.linear = nn.Sequential(nn.Linear(in_features=129, out_features=50), nn.Linear(in_features=50,out_features=25), nn.Linear(in_features=25,out_features=classes))
 
     def forward(self, x): 
 
@@ -61,7 +61,7 @@ class ConvolutionalLongitudinalClassifier(nn.Module):
         temporal_maps = self.temporal_convolution(x)
         # print('Temporal Feature Maps', temporal_maps.shape)
         vector = F.max_pool2d(temporal_maps, [temporal_maps.size(2), 1], padding=[0, 0])
-        print('Feature Vector', vector.shape)
+        # print('Feature Vector', vector.shape)
     
         embedding = self.linear(vector)
         # print('Output', embedding.shape)
@@ -412,12 +412,12 @@ if __name__ == "__main__" :
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--experiment_id", type=str, default='longitud_convo_classification' )
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=1)
 
     args = parser.parse_args()
 
-    train_triplets(**vars(args))
-    # train_classif(**vars(args))
+    # train_triplets(**vars(args))
+    train_classif(**vars(args))
 
 
 
