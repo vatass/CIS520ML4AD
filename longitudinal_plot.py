@@ -107,7 +107,7 @@ for patient in unique_patients:
         print('A B N O R M A L C A S E !! 222222222222')
         print(cleardates[0], cleardates[-1])
         print('Interval', np.abs(cleardates[-1].year - cleardates[0].year))
-        abnormal_cases['trajectory'].append('Dementia->MCI')
+        abnormal_cases['trajectory'].append('Dem->MCI')
         abnormal_cases['time_interval'].append(np.abs(cleardates[-1].year - cleardates[0].year))
         abnormal = True 
         if not cleared : 
@@ -131,6 +131,10 @@ for patient in unique_patients:
                             pivotal_time_years = cleardates[visit].year - cleardates[visit-1].year
                             abnormal_cases_in_detail['change_timepoint_years'].append(pivotal_time_years)
 
+    # if cleardiagnosis[0] == 'Dementia' :
+    #     cleardiagnosis[0]='Dem'
+    # if cleardiagnosis[-1] == 'Dementia' :
+    #     cleardiagnosis[-1] == 'Dem'
 
     trajectory = cleardiagnosis[0] + '->' + cleardiagnosis[-1]
 
@@ -175,9 +179,9 @@ datadict = {'dataset' : longitudinal_dataset}
 
 print(len(longitudinal_dataset)) 
 
-print(type(datadict['dataset']))
-with open('longitudinal_dataset.pkl', 'wb') as handle:
-    pickle.dump(datadict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# print(type(datadict['dataset']))
+# with open('longitudinal_dataset.pkl', 'wb') as handle:
+#     pickle.dump(datadict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 print('Total Patients', patients)
 print('Patients with progression', progression_patients)
@@ -186,13 +190,16 @@ print('All CN', all_cn)
 print('All Dem', all_dem)
 print('All MCI', all_mci)
 
-sys.exit(0)
+
 
 ax = sns.displot(x="trajectory", data=trajectories)
 plt.title('Disease Trajectories in ADNI')
 plt.xticks(rotation=45)
 plt.savefig('../plots/disease_trajectories_in_adni.png')
 plt.show()
+
+sys.exit(0)
+
 
 # ax = sns.barplot(x="trajectory", y='time_interval', data=abnormal_cases)
 # plt.title('Abnormal Disease Trajectories in ADNI')

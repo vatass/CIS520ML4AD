@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import accuracy_score, plot_roc_curve, auc
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import label_binarize
+import matplotlib as mpl 
+
 
 # sns.set_theme(style="whitegrid")
 
@@ -69,8 +72,6 @@ def missing_data(df):
     missing_percentage.append(a)
     # print(ck,a)
   assert len(missing_percentage) == len(keys)
-
-
 def zero_imputation(df, feature): 
 
   values = {feature : 0} 
@@ -177,8 +178,61 @@ def plot_cv_indices(cv, X, y, group, ax, n_splits, lw=10):
     ax.set_title('{}'.format(type(cv).__name__), fontsize=15)
     return ax
 
+def make_ellipses(gmm, ax, colors):
+  for n, color in enumerate(colors):
+      if gmm.covariance_type == 'full':
+          covariances = gmm.covariances_[n][:2, :2]
+      elif gmm.covariance_type == 'tied':
+          covariances = gmm.covariances_[:2, :2]
+      elif gmm.covariance_type == 'diag':
+          covariances = np.diag(gmm.covariances_[n][:2])
+      elif gmm.covariance_type == 'spherical':
+          covariances = np.eye(gmm.means_.shape[1]) * gmm.covariances_[n]
+      v, w = np.linalg.eigh(covariances)
+      u = w[0] / np.linalg.norm(w[0])
+      angle = np.arctan2(u[1], u[0])
+      angle = 180 * angle / np.pi  # convert to degrees
+      v = 2. * np.sqrt(2.) * np.sqrt(v)
+      ell = mpl.patches.Ellipse(gmm.means_[n, :2], v[0], v[1],
+                                180 + angle, color=color)
+      ell.set_clip_box(ax.bbox)
+      ell.set_alpha(0.5)
+      ax.add_artist(ell)
+      ax.set_aspect('equal', 'datalim')
 
-def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo): 
+def multiclass_evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, n_classes,algo): 
+
+  accuracy = accuracy_score(y_true=groundtruth, y_pred=prediction) 
+  class_report = sklearn.metrics.classification_report(y_true=groundtruth, y_pred=prediction, output_dict=True)
+
+  groundtruth = label_binarize(groundtruth, classes=[0,1,2])
+
+  # Compute ROC curve and ROC area for each class
+  fpr = dict()
+  tpr = dict()
+  roc_auc = dict()
+  for i in range(n_classes):
+      fpr[i], tpr[i], _ = sklearn.metrics.roc_curve(groundtruth[:, i], score[:, i])
+      roc_auc[i] = sklearn.metrics.auc(fpr[i], tpr[i])
+
+  # Plot of a ROC curve for a specific class
+  for i in range(n_classes):
+      plt.figure()
+      plt.plot(fpr[i], tpr[i], label='ROC curve (area = %0.2f)' % roc_auc[i])
+      plt.plot([0, 1], [0, 1], 'k--')
+      plt.xlim([0.0, 1.0])
+      plt.ylim([0.0, 1.05])
+      plt.xlabel('False Positive Rate')
+      plt.ylabel('True Positive Rate')
+      plt.title('Receiver operating characteristic example')
+      plt.legend(loc="lower right")
+      plt.savefig('../plots/roc_curve_' + algo + '.png')
+
+  return accuracy, class_report
+
+
+
+def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, n_classes,algo): 
 
   '''
   prediction : list with the predictions 
@@ -189,8 +243,8 @@ def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo):
   '''
 
   accuracy = accuracy_score(y_true=groundtruth, y_pred=prediction) 
-  precision = sklearn.metrics.precision_score(y_true=groundtruth, y_pred=prediction )
-  recall = sklearn.metrics.recall_score(y_true=groundtruth, y_pred=prediction)
+  precision = sklearn.metrics.precision_score(y_true=groundtruth, y_pred=prediction,  average='weighted')
+  recall = sklearn.metrics.recall_score(y_true=groundtruth, y_pred=prediction,  average='weighted')
   class_report = sklearn.metrics.classification_report(y_true=groundtruth, y_pred=prediction, output_dict=True)
 
   sensitivity = class_report['1']['recall']
@@ -201,10 +255,8 @@ def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo):
   # plt.savefig('roc_curve_ontest'+algo +'.png')
   # plt.show()
 
-
-  
   # ROC_AUC plot 
-  n_classes = 2 
+  
   fpr = {}
   tpr = {}
   roc_auc = {'0': [], '1':[]}
@@ -228,7 +280,7 @@ def evaluate(classifier, X_test, Y_test, prediction, score, groundtruth, algo):
   plt.ylabel('True Positive Rate')
   plt.title('Receiver operating characteristic example')
   plt.legend(loc="lower right")
-  plt.savefig('../plots/roc_curve_' + algo + '.png')  
+  plt.savefig('../plots/final_results/baseline_binary_class/roc_curve_' + algo + '.png')  
   # plt.show()
   
 
@@ -283,6 +335,90 @@ def plot_uncertainty(groundtruth, uncertainty, path):
   sns.boxplot(x=groundtruth, y=uncertainty)
   plt.savefig(path + '.png')
   # plt.show() 
+
+
+def plot_scores_for_all_algos(picklefiles,names):
+  '''
+  picklefiles : list of pickle files
+  names: list of the plot name to be saved 
+  Plot function for evaluation of algorithms in different datasets
+  '''
+
+  for picklefile,name in zip(picklefiles, names):
+
+    objects = []
+    with (open(picklefile, "rb")) as openfile:
+        while True:
+            try:
+                objects.append(pickle.load(openfile))
+            except EOFError:
+                break
+
+    # PLOT SENSITIVITY, SPECIFICITY FOR ALL ALGOS
+    plt.figure(figsize=(12,10))
+    data = pd.DataFrame(data=objects[0])
+    sns.scatterplot("algorithm", "value", hue='metric', data=data)
+    plt.title('Evaluation Metrics for ML Algorithms')
+    plt.xticks(rotation=45)
+    plt.savefig("../plots/"+ name +'.png')
+    # plt.show()
+
+def visualize_metrics_for_all_datasets(picklefiles, names):
+  
+  for i, (picklefile,name) in enumerate(zip(picklefiles, names)):
+    
+    objects = []
+    with (open(picklefile, "rb")) as openfile:
+        while True:
+            try:
+                objects.append(pickle.load(openfile))
+            except EOFError:
+                break
+    print(objects[0]['algorithm'])
+    print(objects[0]['accuracy'])
+    print(objects[0]['sensitivity'])
+    print(objects[0]['specificity'])
+ 
+
+    
+    continue
+
+    if i == 0: 
+      total_scores = {} 
+      for key, value in objects[0].items() : 
+        total_scores[key] = []
+        total_scores[key].extend(value) 
+    else :
+    
+      for key, value in objects[0].items(): 
+        total_scores[key].extend(value) 
+
+
+  data = pd.DataFrame(data=total_scores)
+
+  data1 = data[(data['metric'] != 'precision')] # | data['metric'] == 'specificity'] 
+  data2 = data1[data1['algorithm'] != 'KMEANS']
+  # data3 = data1[data2['algorithm'] != 'KMEANS']
+
+  sns.relplot(x="algorithm", y="value", hue="metric", style="dataset", data=data2)
+  plt.title('Comparison of ML Algorithms performance across datasets')
+  plt.xticks(rotation=25)
+  plt.savefig("../plots/alldatasets_ml_performance_comparison.png")
+  plt.show()
+
+
+
+
+if __name__ == "__main__" : 
+
+
+  picklefiles= ['sep_scores_dataset1.pickle', 'sep_scores_dataset2.pickle','sep_scores_dataset3.pickle']
+  names = ['all_algo_metrics_dataset1', 'all_algo_metrics_dataset2', 'all_algo_metrics_dataset3']
+  # plot_scores_for_all_algos(picklefiles=picklefiles, names=names)
+  visualize_metrics_for_all_datasets(picklefiles=picklefiles, names=names) 
+
+
+
 
 
 

@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data import random_split
 import pickle 
 import sys
+import numpy as np
 
 
 def set_up_classification_dataset(dataset): 
@@ -77,7 +78,7 @@ def create_triples_from_set(dataset):
     dem = [] 
     data = [] 
 
-    l = d['dataset']
+    l = dataset['dataset']
 
     for k,(f, t) in enumerate(l): 
         print(f.shape)
@@ -93,39 +94,103 @@ def create_triples_from_set(dataset):
     print('MCI->MCI', len(mci))
     print('Dementia->Dementia', len(dem))
 
-    data_test = []
 
     # test_cn = cn[1:10]
     # test_mci = mci[1:10]
     # test_dem = dem[1:10]
-
-    for i in range(100000): 
+    train_indices = [] 
+    while len(train_indices) < 10000: 
 
         index_cn = np.random.randint(low=0, high=len(cn))
         index_mci = np.random.randint(low=0, high=len(mci))
         index_dem = np.random.randint(low=0, high=len(dem))
-        data.append((cn[index_cn], mci[index_mci],dem[index_dem]))
+        tup = (index_cn, index_mci, index_dem)
+        if tup not in train_indices: 
+            train_indices.append(tup)
+            data.append((cn[index_cn], mci[index_mci],dem[index_dem]))
+    
+    test_indices = [] 
+    test_data = []
+    while len(test_indices) < 1000: 
+        index_cn = np.random.randint(low=0, high=len(cn))
+        index_mci = np.random.randint(low=0, high=len(mci))
+        index_dem = np.random.randint(low=0, high=len(dem))
+        tup = (index_cn, index_mci, index_dem)
+        if tup not in test_indices and tup not in train_indices:  
+            test_indices.append(tup)
+            test_data.append((cn[index_cn], mci[index_mci],dem[index_dem]))
 
-    return data
 
-class TrajectoryDataset(Dataset): 
+    val_indices = np.random.choice(range(len(test_indices)), 100)
+    val_data = [] 
+    for v in val_indices:
+        val_data.append(test_data[v])
 
-    def __init__(self, pckl_file):
+
+    np.save('../data/train_triples', data)
+    np.save('../data/val_triples', val_data)
+    np.save('../data/test_triples', test_data)
+
+
+    return data, test_data, val_data 
+
+class TripletsDataset(Dataset): 
+
+    def __init__(self, npyfile):
         """
         Args:
-            csv_file (string): Path to the csv file with triplets
+            npyfile (string): Path to the npy file with triplets
         """
-        with open(pckl_file, 'rb') as f:
-            d = pickle.load(f)
 
-        self.triplets =  create_triples_from_set(dataset=d)
+        self.train_triplets = np.load(npyfile, allow_pickle=True)
+        cn, mci, dem =  self.train_triplets[0]
+
+        print('Train', len(self.train_triplets),type(self.train_triplets))
+        print(cn.shape, mci.shape, dem.shape)
+
 
     def __len__(self):
-        return len(self.triplets)
+        return len(self.train_triplets)
 
     def __getitem__(self, idx):
+        cn, mci, dem = self.train_triplets[idx]
+        return cn,mci,dem 
 
-        return self.triplets[idx] 
+class TriplesTestDataset(Dataset): 
+    def __init__(self, npyfile):
+        """
+        Args:
+            npyfile (string): Path to the npy file with triplets
+        """
+        self.test_triplets = np.load(npyfile, allow_pickle=True)
+
+    def __len__(self):
+        return len(self.test_triplets)
+
+    def __getitem__(self, idx):
+        cn, mci, dem = self.test_triplets[idx]
+        return cn,mci,dem 
+
+
+
+class TriplesValDataset(Dataset): 
+    def __init__(self, npyfile):
+        """
+        Args:
+            npyfile (string): Path to the npy file with triplets
+        """
+        self.val_triplets = np.load(npyfile, allow_pickle=True)
+
+    def __len__(self):
+        return len(self.val_triplets)
+
+    def __getitem__(self, idx):
+        cn, mci, dem = self.val_triplets[idx]
+        return cn,mci,dem 
+
+
+
+
 
 class LongitudinalDiseaseClassification(Dataset): 
 
@@ -144,7 +209,7 @@ class LongitudinalDiseaseClassification(Dataset):
 
     def __getitem__(self, idx):
         input_, target = self.data[idx]
-        return input_, target 
+        return torch.tensor(input_), target 
 
 class LongitudinalDiseaseClassificationTestSet(Dataset): 
 
@@ -168,22 +233,14 @@ class LongitudinalDiseaseClassificationTestSet(Dataset):
 
 
 if __name__ == "__main__" : 
-    pass 
-    longclassif = LongitudinalDiseaseClassification(pckl_file='../longitudinal_dataset.pkl') 
 
-    print('Len of Dataset', len(longclassif))
+    with open('longitudinal_dataset.pkl', 'rb') as f:
+        d = pickle.load(f)    
+
+    _ =create_triples_from_set(d)
+
+
 
     
 
-    for i, sample in enumerate(longclassif): 
-        print(i)
-        feature, label = sample 
-
-        print('Each feature corresponds to a patient')
-        print('feature', feature.shape)
-        if label == 2 :
-            print('Label', label)
-            sys.exit(0)
-        
-        # if i == 50 : 
-        #     sys.exit(0)
+    
