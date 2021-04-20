@@ -114,9 +114,7 @@ def train(name,
 
 
     print("Save the trained network")
-
-
-
+    #TODO 
 
 
     ## Get the Embeddings for Longitudinal ADNI dataset
